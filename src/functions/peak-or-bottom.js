@@ -2,36 +2,37 @@ import { determineTrend } from './find-trend';
 
 function findCurrentPeakOrBottom(timeSeries, trend) {
 	const dates = Object.keys(timeSeries).sort((a, b) => new Date(a) - new Date(b));
-	const lookAheadPeriod = 3;
+	const lookAheadPeriod = 20;
 
 	let currentPeak = 0;
 	let currentBottom = Number.POSITIVE_INFINITY;
 
 	for (let i = 0; i < dates.length - lookAheadPeriod; i++) {
 		const date = dates[i];
-		const high = parseFloat(timeSeries[date]['2. high']);
-		const low = parseFloat(timeSeries[date]['3. low']);
+		const close = parseFloat(timeSeries[date]['4. close']);
 
 		if (trend === 'Uptrend') {
-			const isConfirmedPeak = Array.from({ length: lookAheadPeriod }, (_, j) => parseFloat(timeSeries[dates[i + j + 1]]['4. close'])).every(
-				(futurePrice) => futurePrice < high
-			);
-			if (isConfirmedPeak && high > currentPeak) {
-				currentPeak = high;
+			const isConfirmedPeak = Array.from({ length: lookAheadPeriod }, (_, j) => {
+				const futureDate = dates[i + j + 1];
+				return parseFloat(timeSeries[futureDate]['4. close']) < close;
+			}).every((isLower) => isLower);
+			if (isConfirmedPeak && close > currentPeak) {
+				currentPeak = close;
 			}
 		} else if (trend === 'Downtrend') {
-			const isConfirmedBottom = Array.from({ length: lookAheadPeriod }, (_, j) =>
-				parseFloat(timeSeries[dates[i + j + 1]]['4. close'])
-			).every((futurePrice) => futurePrice > low);
-			if (isConfirmedBottom && low < currentBottom) {
-				currentBottom = low;
+			const isConfirmedBottom = Array.from({ length: lookAheadPeriod }, (_, j) => {
+				const futureDate = dates[i + j + 1];
+				return parseFloat(timeSeries[futureDate]['4. close']) > close;
+			}).every((isHigher) => isHigher);
+			if (isConfirmedBottom && close < currentBottom) {
+				currentBottom = close;
 			}
 		}
 	}
 	return trend === 'Uptrend' ? currentPeak : currentBottom;
 }
 
-function getLatestPriceAndRelativePercentage(data, symbol) {
+export function getLatestPriceAndRelativePercentage(data, symbol) {
 	const timeSeries = data['Time Series (Daily)'];
 	const trend = determineTrend(timeSeries);
 	const currentPeakOrBottom = findCurrentPeakOrBottom(timeSeries, trend);
