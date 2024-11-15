@@ -1,6 +1,7 @@
 {
   "name": "asset-price-monitor",
-  "version": "0.0.0",
+  "version": "0.0.1",
+  "type": "module",
   "private": true,
   "scripts": {
     "deploy": "wrangler deploy",
@@ -10,7 +11,10 @@
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.5.2",
-    "wrangler": "^3.60.3",
-    "vitest": "2.0.5"
+    "vitest": "2.0.5",
+    "wrangler": "^3.60.3"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5"
   }
 }
