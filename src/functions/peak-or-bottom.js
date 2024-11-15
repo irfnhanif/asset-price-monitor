@@ -9,26 +9,25 @@ function findCurrentPeakOrBottom(timeSeries, trend) {
 
 	for (let i = 0; i < dates.length - lookAheadPeriod; i++) {
 		const date = dates[i];
-		const close = parseFloat(timeSeries[date]['4. close']);
+		const closePrice = parseFloat(timeSeries[date]['4. close']);
 
 		if (trend === 'Uptrend') {
-			const isConfirmedPeak = Array.from({ length: lookAheadPeriod }, (_, j) => {
-				const futureDate = dates[i + j + 1];
-				return parseFloat(timeSeries[futureDate]['4. close']) < close;
-			}).every((isLower) => isLower);
-			if (isConfirmedPeak && close > currentPeak) {
-				currentPeak = close;
+			for (let j = i + 1; j < i + lookAheadPeriod && j < dates.length; j++) {
+				const futureClosePrice = parseFloat(timeSeries[dates[j]]['4. close']);
+				if (futureClosePrice > currentPeak) {
+					currentPeak = futureClosePrice;
+				}
 			}
 		} else if (trend === 'Downtrend') {
-			const isConfirmedBottom = Array.from({ length: lookAheadPeriod }, (_, j) => {
-				const futureDate = dates[i + j + 1];
-				return parseFloat(timeSeries[futureDate]['4. close']) > close;
-			}).every((isHigher) => isHigher);
-			if (isConfirmedBottom && close < currentBottom) {
-				currentBottom = close;
+			for (let j = i + 1; j < i + lookAheadPeriod && j < dates.length; j++) {
+				const futureClosePrice = parseFloat(timeSeries[dates[j]]['4. close']);
+				if (futureClosePrice < currentBottom) {
+					currentBottom = futureClosePrice;
+				}
 			}
 		}
 	}
+
 	return trend === 'Uptrend' ? currentPeak : currentBottom;
 }
 
@@ -40,9 +39,13 @@ export function getLatestPriceAndRelativePercentage(data, symbol) {
 	const latestDate = Object.keys(timeSeries)[0];
 	const latestClosePrice = parseFloat(timeSeries[latestDate]['4. close']);
 
-	const relativePercentage = ((latestClosePrice - currentPeakOrBottom) / currentPeakOrBottom) * 100;
+	const percentageChange = ((latestClosePrice - currentPeakOrBottom) / currentPeakOrBottom) * 100;
+	const relativePercentage = (percentageChange >= 0 ? '+' : '') + percentageChange.toFixed(2) + '%';
+
 	return {
 		price: latestClosePrice,
-		relative_percentage: relativePercentage.toFixed(2) + '%',
+		peak_or_bottom_price: currentPeakOrBottom,
+		relative_percentage: relativePercentage,
 	};
 }
+
