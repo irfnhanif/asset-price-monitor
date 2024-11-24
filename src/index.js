@@ -7,7 +7,6 @@
  *
  * Learn more at https://developers.cloudflare.com/workers/
  */
-
 import 'dotenv/config';
 import { processStock } from './functions/process-stock.js';
 import { processCrypto } from './functions/process-crypto.js';
