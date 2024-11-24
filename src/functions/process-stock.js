@@ -10,7 +10,7 @@ export async function processStock(symbol, apiKey) {
 
 		const result = {
 			symbol,
-			data: getLatestPriceAndRelativePercentage(data, symbol, 'stock'),
+			data: getLatestPriceAndRelativePercentage(data, symbol),
 		};
 
 		return result;

@@ -1,13 +1,7 @@
 import { determineTrend } from './find-trend';
 
-export function getLatestPriceAndRelativePercentage(data, symbol, type) {
-	const timeSeries = type === 'stock' ? data['Time Series (Daily)'] : data['data'];
-	const trend = determineTrend(timeSeries, type);
-	return findCurrentPeakOrBottom(timeSeries, trend, type);
-}
-
-function findCurrentPeakOrBottom(timeSeries, trend, type) {
-	const dates = Object.keys(timeSeries).sort((a, b) => (type === 'stock' ? new Date(a) - new Date(b) : new Date(b) - new Date(a)));
+function findCurrentPeakOrBottom(timeSeries, trend) {
+	const dates = Object.keys(timeSeries).sort((a, b) => new Date(a) - new Date(b));
 	const lookAheadPeriod = 20;
 
 	let currentPeak = 0;
@@ -15,18 +9,18 @@ function findCurrentPeakOrBottom(timeSeries, trend, type) {
 
 	for (let i = 0; i < dates.length - lookAheadPeriod; i++) {
 		const date = dates[i];
-		const closePrice = parseFloat(type === 'stock' ? timeSeries[date]['4. close'] : timeSeries[date][1]);
+		const closePrice = parseFloat(timeSeries[date]['4. close']);
 
 		if (trend === 'Uptrend') {
 			for (let j = i + 1; j < i + lookAheadPeriod && j < dates.length; j++) {
-				const futureClosePrice = parseFloat(type === 'stock' ? timeSeries[dates[j]]['4. close'] : timeSeries[dates[j]][1]);
+				const futureClosePrice = parseFloat(timeSeries[dates[j]]['4. close']);
 				if (futureClosePrice > currentPeak) {
 					currentPeak = futureClosePrice;
 				}
 			}
 		} else if (trend === 'Downtrend') {
 			for (let j = i + 1; j < i + lookAheadPeriod && j < dates.length; j++) {
-				const futureClosePrice = parseFloat(type === 'stock' ? timeSeries[dates[j]]['4. close'] : timeSeries[dates[j]][1]);
+				const futureClosePrice = parseFloat(timeSeries[dates[j]]['4. close']);
 				if (futureClosePrice < currentBottom) {
 					currentBottom = futureClosePrice;
 				}
@@ -34,5 +28,24 @@ function findCurrentPeakOrBottom(timeSeries, trend, type) {
 		}
 	}
 
-	return { currentPeak, currentBottom };
+	return trend === 'Uptrend' ? currentPeak : currentBottom;
 }
+
+export function getLatestPriceAndRelativePercentage(data, symbol) {
+	const timeSeries = data['Time Series (Daily)'];
+	const trend = determineTrend(timeSeries);
+	const currentPeakOrBottom = findCurrentPeakOrBottom(timeSeries, trend);
+
+	const latestDate = Object.keys(timeSeries)[0];
+	const latestClosePrice = parseFloat(timeSeries[latestDate]['4. close']);
+
+	const percentageChange = ((latestClosePrice - currentPeakOrBottom) / currentPeakOrBottom) * 100;
+	const relativePercentage = (percentageChange >= 0 ? '+' : '') + percentageChange.toFixed(2) + '%';
+
+	return {
+		price: latestClosePrice,
+		peak_or_bottom_price: currentPeakOrBottom,
+		relative_percentage: relativePercentage,
+	};
+}
+

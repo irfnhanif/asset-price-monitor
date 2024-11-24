@@ -10,14 +10,17 @@
 
 import 'dotenv/config';
 import { processStock } from './functions/process-stock.js';
+import { processCrypto } from './functions/process-crypto.js';
 
 export default {
 	async fetch(request, env, ctx) {
-		const { stocks } = await request.json();
+		const { stocks, cryptos } = await request.json();
 		const apiKey = process.env.STOCK_API_KEY;
 
 		const stockResponses = await Promise.all(stocks.map((symbol) => processStock(symbol, apiKey)));
-		const result = stockResponses.reduce((acc, { symbol, data }) => {
+		const cryptoResponses = await Promise.all(cryptos.map((symbol) => processCrypto(symbol)));
+
+		const result = [...stockResponses, ...cryptoResponses].reduce((acc, { symbol, data }) => {
 			if (data) acc[symbol] = data;
 			return acc;
 		}, {});
